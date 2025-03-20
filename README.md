@@ -1,6 +1,13 @@
-# Liars Bar LLM
+# Liars Bar LLM Mod
 
-一个由大语言模型驱动的AI版骗子酒馆对战框架
+一个由大语言模型驱动的AI版骗子酒馆对战框架，原始项目为[liars-bar-llm](https://github.com/LYiHub/liars-bar-llm/blob/main/game.py)。
+
+## 修改点
+### 模型配置
+本项目主要针对中文大模型进行测试，添加了火山引擎的兼容内容，相关依赖包可以参考`requirements.txt`文件。同时，添加了流式输出，降低大模型响应超时的概率，同时对LLM的配置文件做了一些修改，通过环境变量来配置API_KEY，详情可查看`llm_client.py`文件。
+
+### 提示词变化
+对原项目的提示词做了一定的修改，添加了明确的Markdown风格的段落标识和列表符号，同时重点强调了模型的输出格式、json结构体内key的名称。
 
 ## 文件结构
 
@@ -25,20 +32,6 @@
 `player_matchup_analyze.py` 用于提取互为对手的AI间的对局记录进行分析
 
 `json_convert.py` 用于将json游戏记录转为可读文本
-
-## 配置
-
-使用conda环境配置相应依赖包：
-
-```
-pip install openai
-```
-
-本项目的API配置在`llm_client.py`中。
-
-本项目利用了New API https://github.com/Calcium-Ion/new-api?tab=readme-ov-file 配置了统一的接口调用格式。使用时需自行配置相应模型的API接口。
-
-也可以采用类似的API管理项目One API https://github.com/songquanpeng/one-api 实现统一的接口调用。
 
 ## 使用方法
 
@@ -79,10 +72,3 @@ python player_matchup_analyze.py
 python game_analyze.py
 ```
 
-## Demo
-
-项目已将 DeepSeek-R1、o3-mini、Gemini-2-flash-thinking、Claude-3.7-Sonnet 四个模型作为玩家运行了50局，记录存放在`demo_records`文件夹中。
-
-## 已知问题
-
-模型在出牌和质疑阶段的输出可能不稳定，当输出无法满足游戏规定时，会自动重试。如果多次因为输出问题中断运行，可在`player.py`的`choose_cards_to_play`和`decide_challenge`中增加调用大模型的重试次数，或修改`prompt`文件夹中的`play_card_prompt_template.txt`和`challenge_prompt_template.txt`提示词强化对输出格式的限制（可能对模型的推理能力有一定影响）。

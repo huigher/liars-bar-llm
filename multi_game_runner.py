@@ -1,9 +1,12 @@
+import traceback
+import random
 from game import Game
 from typing import Dict, List
+import llm_client
 import argparse
 
 class MultiGameRunner:
-    def __init__(self, player_configs: List[Dict[str, str]], num_games: int = 10):
+    def __init__(self, player_configs: List[Dict[str, str]], num_games: int = 10,player_order_random=True):
         """初始化多局游戏运行器
         
         Args:
@@ -12,17 +15,26 @@ class MultiGameRunner:
         """
         self.player_configs = player_configs
         self.num_games = num_games
+        if player_order_random:
+            random.shuffle(self.player_configs)
 
     def run_games(self) -> None:
         """运行指定数量的游戏"""
+
         for game_num in range(1, self.num_games + 1):
-            print(f"\n=== 开始第 {game_num}/{self.num_games} 局游戏 ===")
-            
-            # 创建并运行新游戏
-            game = Game(self.player_configs)
-            game.start_game()
-            
-            print(f"第 {game_num} 局游戏结束")
+            try:
+                print(f"\n=== 开始第 {game_num}/{self.num_games} 局游戏 ===")
+
+                # 创建并运行新游戏
+                game = Game(self.player_configs)
+                game.start_game()
+
+                print(f"第 {game_num} 局游戏结束")
+            except Exception as e:
+                print(f"第 {game_num} 局游戏出错: {e}")
+                traceback.print_exc()
+                continue
+
 
 def parse_arguments():
     """解析命令行参数"""
@@ -44,12 +56,24 @@ if __name__ == '__main__':
     
     # 配置玩家信息, 其中model为你通过API调用的模型名称
     player_configs = [
-        {"name": "DeepSeek", "model": "deepseek-r1"},
-        {"name": "ChatGPT", "model": "o3-mini"},
-        {"name": "Claude", "model": "claude-3.7-sonnet"},
-        {"name": "Gemini", "model": "gemini-2.0-flash-thinking"}
+        {
+            "name": llm_client.MODEL_NICKNAME_DB[llm_client.QWEN_MODEL_NAME],
+            "model": llm_client.QWEN_MODEL_NAME
+        },
+        {
+            "name": llm_client.MODEL_NICKNAME_DB[llm_client.QWEN_THINKING_MODEL_NAME],
+            "model": llm_client.QWEN_THINKING_MODEL_NAME
+        },
+        {
+            "name": llm_client.MODEL_NICKNAME_DB[llm_client.DEEPSEEK_MODEL_NAME],
+            "model": llm_client.DEEPSEEK_MODEL_NAME
+        },
+        {
+            "name": llm_client.MODEL_NICKNAME_DB[llm_client.DOUBAO_MODEL_NAME],
+            "model": llm_client.DOUBAO_MODEL_NAME
+        }
     ]
-    
+
     # 创建并运行多局游戏
     runner = MultiGameRunner(player_configs, num_games=args.num_games)
     runner.run_games()

@@ -1,13 +1,19 @@
 import random
 import json
 import re
+import traceback
+
 from typing import List, Dict
+
+import llm_client
 from llm_client import LLMClient
 
 RULE_BASE_PATH = "prompt/rule_base.txt"
 PLAY_CARD_PROMPT_TEMPLATE_PATH = "prompt/play_card_prompt_template.txt"
 CHALLENGE_PROMPT_TEMPLATE_PATH = "prompt/challenge_prompt_template.txt"
 REFLECT_PROMPT_TEMPLATE_PATH = "prompt/reflect_prompt_template.txt"
+
+SYSTEM_TEMPLATE="你是一名经验丰富、思维缜密的桌游玩家，熟知各种桌游规则和技巧。"
 
 class Player:
     def __init__(self, name: str, model_name: str):
@@ -25,7 +31,7 @@ class Player:
         self.opinions = {}
         
         # LLM相关初始化
-        self.llm_client = LLMClient()
+        self.llm_client = LLMClient(model_name)
         self.model_name = model_name
 
     def _read_file(self, filepath: str) -> str:
@@ -57,7 +63,7 @@ class Player:
     def choose_cards_to_play(self,
                         round_base_info: str,
                         round_action_info: str,
-                        play_decision_info: str) -> Dict:
+                        play_decision_info: str) -> tuple:
         """
         玩家选择出牌
         
@@ -92,11 +98,12 @@ class Player:
         for attempt in range(5):
             # 每次都发送相同的原始prompt
             messages = [
+                {"role": "system", "content": SYSTEM_TEMPLATE},
                 {"role": "user", "content": prompt}
             ]
             
             try:
-                content, reasoning_content = self.llm_client.chat(messages, model=self.model_name)
+                content, reasoning_content = self.llm_client.chat(messages)
                 
                 # 尝试从内容中提取JSON部分
                 json_match = re.search(r'({[\s\S]*})', content)
@@ -108,8 +115,9 @@ class Player:
                     if all(key in result for key in ["played_cards", "behavior", "play_reason"]):
                         # 确保played_cards是列表
                         if not isinstance(result["played_cards"], list):
+                            print("返回的played_cards不是列表，但程序尝试容错")
                             result["played_cards"] = [result["played_cards"]]
-                        
+
                         # 确保选出的牌是有效的（从手牌中选择1-3张）
                         valid_cards = all(card in self.hand for card in result["played_cards"])
                         valid_count = 1 <= len(result["played_cards"]) <= 3
@@ -119,10 +127,17 @@ class Player:
                             for card in result["played_cards"]:
                                 self.hand.remove(card)
                             return result, reasoning_content
+                        print(f"出牌逻辑或出牌数量非法，手牌：{self.hand}")
+                        continue
+                    print("json内的key非法")
+                    continue
+                print("返回结果中找不到有效的json结构体")
+                continue
                                 
             except Exception as e:
                 # 仅记录错误，不修改重试请求
                 print(f"尝试 {attempt+1} 解析失败: {str(e)}")
+                traceback.print_exc()
         raise RuntimeError(f"玩家 {self.name} 的choose_cards_to_play方法在多次尝试后失败")
 
     def decide_challenge(self,
@@ -130,7 +145,7 @@ class Player:
                         round_action_info: str,
                         challenge_decision_info: str,
                         challenging_player_performance: str,
-                        extra_hint: str) -> bool:
+                        extra_hint: str) -> tuple:
         """
         玩家决定是否对上一位玩家的出牌进行质疑
         
@@ -168,11 +183,12 @@ class Player:
         for attempt in range(5):
             # 每次都发送相同的原始prompt
             messages = [
+                {"role": "system", "content": SYSTEM_TEMPLATE},
                 {"role": "user", "content": prompt}
             ]
             
             try:
-                content, reasoning_content = self.llm_client.chat(messages, model=self.model_name)
+                content, reasoning_content = self.llm_client.chat(messages)
                 
                 # 解析JSON响应
                 json_match = re.search(r'({[\s\S]*})', content)
@@ -185,10 +201,17 @@ class Player:
                         # 确保was_challenged是布尔值
                         if isinstance(result["was_challenged"], bool):
                             return result, reasoning_content
+                        print("was_challenged的值非法")
+                        continue
+                    print("json结构体中key非法")
+                    continue
+                print("返回结果中找不到json结构体")
+                continue
                 
             except Exception as e:
                 # 仅记录错误，不修改重试请求
                 print(f"尝试 {attempt+1} 解析失败: {str(e)}")
+                traceback.print_exc()
         raise RuntimeError(f"玩家 {self.name} 的decide_challenge方法在多次尝试后失败")
 
     def reflect(self, alive_players: List[str], round_base_info: str, round_action_info: str, round_result: str) -> None:
@@ -229,11 +252,12 @@ class Player:
             
             # 向LLM请求分析
             messages = [
+                {"role": "system", "content": SYSTEM_TEMPLATE},
                 {"role": "user", "content": prompt}
             ]
             
             try:
-                content, _ = self.llm_client.chat(messages, model=self.model_name)
+                content, _ = self.llm_client.chat(messages)
                 
                 # 更新对该玩家的印象
                 self.opinions[player_name] = content.strip()
@@ -241,6 +265,7 @@ class Player:
                 
             except Exception as e:
                 print(f"反思玩家 {player_name} 时出错: {str(e)}")
+                traceback.print_exc()
 
     def process_penalty(self) -> bool:
         """处理惩罚"""

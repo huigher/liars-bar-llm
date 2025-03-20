@@ -27,6 +27,7 @@ def analyze_game_records(folder_path):
                 
             # 跳过没有赢家的游戏
             if game_data.get('winner') is None:
+                print(f"{filename}没有赢家，跳过")
                 continue
                 
             game_count += 1
@@ -157,6 +158,6 @@ def print_statistics(stats, win_rates, game_count, player_names):
                 print(f"{player} vs {opponent:<10} {matchups:<10} {wins:<10} {win_rate:.1f}%")
 
 if __name__ == "__main__":
-    folder_path = "game_records"  # 替换为实际的文件夹路径
+    folder_path = "game_records_xiaozi_no_random"  # 替换为实际的文件夹路径
     stats, win_rates, game_count, player_names = analyze_game_records(folder_path)
     print_statistics(stats, win_rates, game_count, player_names)

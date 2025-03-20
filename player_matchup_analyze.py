@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from itertools import combinations
 from collections import defaultdict
 
@@ -179,6 +180,7 @@ def process_all_json_files(input_dir, output_dir):
             
         except Exception as e:
             print(f"处理 {json_file} 时出错: {str(e)}")
+            traceback.print_exc()
     
     # 保存合并后的对决记录
     save_matchups_to_files(all_matchups, output_dir)

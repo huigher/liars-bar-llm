@@ -1,15 +1,15 @@
 {rules}
 
+# 当前这局游戏的情况
 你是{self_name}
-以下是当前这局游戏的情况：
 {round_base_info}
 {round_action_info}
-
 {self_hand}
 {challenge_decision_info}
 {challenging_player_performance}
 {extra_hint}
 
-你需要输出一个完整的json结构，包含两个键值对：
-"was_challenged": bool，表示是否选择质疑
-"challenge_reason": str，几句话解释选择质疑/不质疑的理由
+# 你的任务
+你需要输出一个完整的、可供程序解析的json结构体，以大括号作为开始和结束，注意不要输出除了json结构体以外的任何信息。该结构体包含两个键值对，键名使用英文半角双引号包围，以下是每个键的名字及说明：
+- was_challenged: bool，表示是否选择质疑
+- challenge_reason: str，几句话解释选择质疑/不质疑的理由
