@@ -140,6 +140,6 @@ def process_game_records(input_directory, output_directory, including_reasoning=
 
 
 if __name__ == '__main__':
-    game_records_directory = 'game_records_xiaozi_no_random'
-    output_directory = 'converted_game_records_xiaozi_no_random'  # 新的输出目录
+    game_records_directory = 'game_records_xiaoe_no_random'
+    output_directory = 'converted_game_records_xiaoe_no_random'  # 新的输出目录
     process_game_records(game_records_directory, output_directory, including_reasoning=True)
